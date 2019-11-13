@@ -256,8 +256,8 @@ Use 1 instance.
 }
 
 
-## Run The loop
 ```
+## Run The loop
 This function will be used to run the whole program loop.
 ```rust
 fn run<B: Backend>(

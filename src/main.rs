@@ -184,7 +184,6 @@ where
 }
 
 
-## Run The loop
 fn run<B: Backend>(
     event_loop: EventLoop<()>,
     mut factory: Factory<B>,
