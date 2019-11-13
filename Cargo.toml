@@ -1,0 +1,17 @@
+[package]
+name = "test_rendy"
+version = "0.1.0"
+authors = ["Tom Gowan <tomrgowan@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+metal = ["rendy/metal"]
+default = ["rendy/default", "metal", "rendy/init-winit"]
+
+[dependencies]
+rendy = "0.5.1"
+env_logger = "0.7.1"
+log = "0.4.8"
+lazy_static = "1.4.0"
