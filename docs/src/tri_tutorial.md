@@ -2,6 +2,7 @@
 
 This is a quick walkthrough of the rendy [triangle example](https://github.com/amethyst/rendy/blob/release-0.5.1/rendy/examples/triangle/main.rs).
 
+\#S:INCLUDE
 
 These are all the imports we need.
 ```rust
@@ -418,6 +419,7 @@ Now run the whole graph.
 ```
 
 ## Vertex Shader
+\#S:MODE=vert
 ```glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
@@ -432,6 +434,7 @@ void main() {
 }
 ```
 ## Fragment Shader
+\#S:MODE=frag
 ```glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
