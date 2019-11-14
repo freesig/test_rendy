@@ -2,7 +2,6 @@
 
 This is a quick walkthrough of the rendy [triangle example](https://github.com/amethyst/rendy/blob/release-0.5.1/rendy/examples/triangle/main.rs).
 
-\#S:INCLUDE
 
 These are all the imports we need.
 ```rust
@@ -52,13 +51,18 @@ Pulls in fragment shader source and compiles it.
         "main",
     ).precompile().unwrap();
 
+```
+Now the shaders are turned into a shader set builder.  
+The shader set holds both the vertex and the fragment shader.  
+It allows us to extract information from the shaders and attach then to the graphics pipeline.
+```rust
     static ref SHADERS: rendy::shader::ShaderSetBuilder = rendy::shader::ShaderSetBuilder::default()
         .with_vertex(&*VERTEX).unwrap()
         .with_fragment(&*FRAGMENT).unwrap();
 }
 
 ```
-We need to reflect the shaders so we can use the types when we build the pipeline.
+We can reflect shaders so we can use reflected information about shader variables when building the pipeline, this way we can ensure they match.
 ```rust
 #[cfg(feature = "spirv-reflection")]
 lazy_static::lazy_static! {
@@ -67,6 +71,7 @@ lazy_static::lazy_static! {
 
 ```
 These types are used to describe our render pipeline. They will be set up later using the impl blocks.
+Pipeline desc is used to supply all needed info for a specific GraphicsPipeline, which can be thought of as a configuration of all state needed to take input data and turn it into output fragments (the actual result that ends up on your screen).
 ```rust
 #[derive(Debug, Default)]
 struct TriangleRenderPipelineDesc;
@@ -116,7 +121,10 @@ The vertices are described using types in the shader.
         #[cfg(not(feature = "spirv-reflection"))]
         return vec![PosColor::vertex().gfx_vertex_input_desc(hal::pso::VertexInputRate::Vertex)];
     }
-
+```
+The build function is only called once at the start of the program.  
+Because the vertex buffer doesn't change you could actually construct it here instead.
+```rust
     fn build<'a>(
         self,
         _ctx: &GraphContext<B>,
@@ -149,6 +157,8 @@ where
 ### Prepare this pipeline
 Prepare the graphics pipeline. Note that only the factory is used.  
 There's lots that could be configured but this is example is desgined to keep things simple.
+This function is called once per frame to get data rendy for the draw funtion.
+The reason for this is to check for any changes that might need to happen to the command buffer.
 ```rust
     fn prepare(
         &mut self,
@@ -158,6 +168,10 @@ There's lots that could be configured but this is example is desgined to keep th
         _index: usize,
         _aux: &T,
     ) -> PrepareResult {
+```
+If the vertex buffer hasn't been created then create it here.  
+This could also be done in the build function because it doesn't change.
+```rust
         if self.vertex.is_none() {
 ```
 Extract the vertex buffer size from the shader reflection.
@@ -222,7 +236,7 @@ Create a blue vertex at x: -0.5, y: 0.5, z: 0.0.
         }
 
 ```
-Tells rendy that this will be reused so it can be cached in memory.
+Tells rendy that nothing has changed in the command buffer so we don't need to call draw since nothing is different.
 ```rust
         PrepareResult::DrawReuse
     }
@@ -239,7 +253,7 @@ The draw function will be called each frame.
         _aux: &T,
     ) {
 ```
-Get the vertex buffer and bind it too the render pass.
+Get the vertex buffer and bind it as the active buffer at bind point 0.
 ```rust
         let vbuf = self.vertex.as_ref().unwrap();
         unsafe {
@@ -379,7 +393,7 @@ Grab the size from the window.
             let (width, height) = window.inner_size().to_physical(window.hidpi_factor()).into();
 
 ```
-Add the triangle pipeline as a node on the graph.
+Automatically build the triangle pipeline into a graph node which contains only one render pass, with one subpass and one pipeline inside that subpass
 ```rust
             graph_builder.add_node(
                 TriangleRenderPipeline::builder()
@@ -387,7 +401,11 @@ Add the triangle pipeline as a node on the graph.
                     .with_color_surface()
                     .into_pass()
 ```
-The surface is cleared to white.
+The surface's load operation clears it to white.  
+This operation will occur each time the associated render pass begins and loads the becking image's memory. 
+
+> Note there's only a single render pass in this example but there could be multiple in other programs.
+
 ```rust
                     .with_surface(
                         surface,
@@ -419,7 +437,6 @@ Now run the whole graph.
 ```
 
 ## Vertex Shader
-\#S:MODE=vert
 ```glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
@@ -434,7 +451,6 @@ void main() {
 }
 ```
 ## Fragment Shader
-\#S:MODE=frag
 ```glsl
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
@@ -448,3 +464,4 @@ void main() {
     color = frag_color;
 }
 ```
+Creadit to [termhn](https://github.com/termhn) for edits.
